@@ -11,6 +11,7 @@ import (
 	"github.com/portworx/sched-ops/k8s"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -29,6 +30,7 @@ func testSnapshotsCommon(t *testing.T, newCommand NewTestCommand, cmdArgs []stri
 	}
 
 	f := NewTestFactory()
+	f.SetOutputFormat(outputFormatTable)
 	tf := f.TestFactory.WithNamespace("test")
 	defer tf.Cleanup()
 	codec := serializer.NewCodecFactory(scheme).LegacyCodec(schema.GroupVersion{Version: "v1", Group: snapv1.GroupName})
@@ -65,6 +67,34 @@ func TestGetVolumeSnapshotsNoSnapshots(t *testing.T) {
 	var snapshots snapv1.VolumeSnapshotList
 
 	expected := `No resources found.
+`
+
+	testSnapshotsCommon(t, newGetCommand, cmdArgs, &snapshots, expected)
+}
+
+func TestGetVolumeSnapshotsOneSnapshot(t *testing.T) {
+	cmdArgs := []string{"volumesnapshots"}
+
+	snap := &snapv1.VolumeSnapshot{
+		Metadata: metav1.ObjectMeta{
+			Name:      "snap1",
+			Namespace: "test_namespace",
+			Labels: map[string]string{
+				"Label1": "labelValue1",
+				"Label2": "labelValue2",
+			},
+		},
+		Spec: snapv1.VolumeSnapshotSpec{
+			SnapshotDataName:          "snapShotDataName",
+			PersistentVolumeClaimName: "persistentVolumeClaimName",
+		},
+	}
+	var snapshots snapv1.VolumeSnapshotList
+
+	snapshots.Items = append(snapshots.Items, *snap)
+
+	expected := `NAME      PVC                         STATUS    CREATED   COMPLETED   TYPE
+snap1     persistentVolumeClaimName   Pending                         Local
 `
 
 	testSnapshotsCommon(t, newGetCommand, cmdArgs, &snapshots, expected)
