@@ -10,6 +10,7 @@ import (
 	"github.com/portworx/sched-ops/k8s"
 	"github.com/spf13/cobra"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/kubectl/genericclioptions"
 	"k8s.io/kubernetes/pkg/printers"
 )
@@ -36,14 +37,14 @@ func newGetClusterPairCommand(cmdFactory Factory, ioStreams genericclioptions.IO
 				for _, pairName := range args {
 					pair, err := k8s.Instance().GetClusterPair(pairName)
 					if err != nil {
-						handleError(err, ioStreams.ErrOut)
+						util.CheckErr(err)
 					}
 					clusterPairs.Items = append(clusterPairs.Items, *pair)
 				}
 			} else {
 				clusterPairs, err = k8s.Instance().ListClusterPairs()
 				if err != nil {
-					handleError(err, ioStreams.ErrOut)
+					util.CheckErr(err)
 				}
 			}
 
@@ -54,11 +55,11 @@ func newGetClusterPairCommand(cmdFactory Factory, ioStreams genericclioptions.IO
 
 			outputFormat, err := cmdFactory.GetOutputFormat()
 			if err != nil {
-				handleError(err, ioStreams.ErrOut)
+				util.CheckErr(err)
 			}
 
 			if err := printObjects(c, clusterPairs, outputFormat, clusterPairColumns, clusterPairPrinter, ioStreams.Out); err != nil {
-				handleError(err, ioStreams.ErrOut)
+				util.CheckErr(err)
 			}
 		},
 	}
@@ -92,7 +93,7 @@ func newGenerateClusterPairCommand(cmdFactory Factory, ioStreams genericclioptio
 		Run: func(c *cobra.Command, args []string) {
 			config, err := cmdFactory.RawConfig()
 			if err != nil {
-				handleError(err, ioStreams.ErrOut)
+				util.CheckErr(err)
 			}
 
 			// Prune out all but the current-context and related
@@ -142,7 +143,7 @@ func newGenerateClusterPairCommand(cmdFactory Factory, ioStreams genericclioptio
 				},
 			}
 			if err = printEncoded(c, clusterPair, "yaml", ioStreams.Out); err != nil {
-				handleError(err, ioStreams.ErrOut)
+				util.CheckErr(err)
 			}
 		},
 	}
